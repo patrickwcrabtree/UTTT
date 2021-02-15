@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html >
+<head>
+<link rel="stylesheet" type="text/css" href="./css/main.css">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
+
+</head>
+<div id="container">
+<div id="spacer"><span></span>
+
+<div id="dialog" >
+<p>Would you like to play again?</p>
+</div>
+
+</div>
+<div id="mainArea">
+<span></span>
+</div>	
+</div>
+
+<script>
+$(document).ready(function(){
+	var previousTarget;
+	var turn = "X";
+	var table = "";
+	var winnerArray = new Array(9);
+	for(var tableNum = 1; tableNum <= 9; tableNum++){
+		if(tableNum == 1){
+			table += "<div class=col id=col1>";
+		}else if(tableNum == 4){
+			table += "<div class=col  id=col2>";
+		}else if(tableNum == 7){
+			table += "<div class=col  id=col3>";
+		}
+		table += "<table id=table" + tableNum + ">";
+		var tdCounter = 1;
+		for(var rowNum = 1; rowNum <=3; rowNum++){
+			var row = "<tr>";
+			for(var colNum = 1; colNum <=3; colNum++){
+				row += "<td class=" + tdCounter + ">&nbsp</td>";
+				tdCounter++;
+			}
+			row += "</tr>";
+			table+= row;
+		}	
+		table += "</table>";
+		if(tableNum == 3 || tableNum == 6 || tableNum == 9){
+			table += "</div>";
+		}
+	}
+	$("#mainArea").append(table);
+	updateTurn(turn);
+	
+	//Resizes width of boxes
+	adjustWidth();
+	//Starts Game
+	$('td').click(function(e){
+		startTurns(e.target, turn, winnerArray, previousTarget);
+	});
+});
+
+$(window).resize(function() {
+	adjustWidth();
+});
+
+$(window).on( "orientationchange", function() {
+	adjustWidth();
+});
+
+/*
+ * Updates width and font for responsive table
+ */
+function adjustWidth(){
+	
+	var tdWidth = $("td").height();
+	var width = tdWidth+"px";
+	$("td").css('width',width);
+	
+	var fontSize = tdWidth/2 + "px";
+	$("table").css('font-size',fontSize);
+	
+	//Calculate spacer width to center table
+	var bodyWidth= $("body").width();
+	var colWidth= $("#table1").width() + $("#table2").width() + $("#table3").width();
+	var colMinWidth= colWidth + 50;
+	var spacerWidth =  (bodyWidth - colWidth)/2 + "px";
+	$("#spacer").css('width',spacerWidth);
+	$(".col").css('min-width',colMinWidth+ "px");
+	//If the col width is greater than body width
+	//set the spacer min width to keep in center;
+	if(colMinWidth <= bodyWidth){
+		$("#spacer").css('min-width',spacerWidth);
+	}else{
+		$("#spacer").css('min-width',"0px");
+
+	}
+	return; 
+}
+
+/*
+ * Changes Turn
+ */
+ function switchTurn(target, turn){
+ 	if(turn == "X"){
+ 		$(target).off('click');
+ 		return "O";
+ 	}else{
+ 		$(target).off('click');
+ 		return "X";
+ 	}
+ }
+ 
+/*
+ * Disable tables that are not selectable
+ * for the next turn
+ */
+ function disableAllTables(){
+	 var allTables = $(mainArea).find('table');
+	 allTables.each(function(i, obj){
+		 var allCells = $(obj).find('td');
+		 allCells.each(function(j, cell){
+			 $(cell).off('click');
+		 });
+	 });
+ }
+ 
+ /*
+  * Disable tables that are not selectable
+  * for the next turn
+  */
+  function enableSelectedTable(target, turn, winnerArray, previousTarget){
+	 var tableId = getTableIdByTD(target);
+ 	 var allTables = $(mainArea).find('table');
+ 	 allTables.each(function(i, obj){
+ 		 var currentTableId = $(obj).attr('id');
+ 		 if(currentTableId == tableId){
+ 			 var allCells = $(obj).find('td');
+ 			 allCells.each(function(j, cell){
+ 				 //Only enable cells if
+ 				 // table does not have winner
+ 				 // and that do not have turns in them 
+ 				 var nextTableNum = currentTableId.slice(-1) - 1;
+ 				 var winner = winnerArray[nextTableNum];
+ 				 if(!winner
+ 				 		&& !$(cell).text().trim().length){
+	 				 $(cell).click(function(e){
+	 					startTurns(e.target, turn, winnerArray, previousTarget);
+	 				});
+ 				 }
+ 			 });
+ 		 }
+ 		 if(currentTableId == tableId){
+ 			 //White
+	 		$(obj).css('background-color',"white");
+ 		 }else{
+ 			 //DarkGrey
+ 	 		$(obj).css('background-color',"darkgrey");
+ 		 }		 
+ 	 });
+  }
+ 
+ /*
+  * Free Play - all tables not already won are
+  * enabled
+  */
+  function enableAllPlayable(target, turn, winnerArray, previousTarget){
+	 	 var allTables = $(mainArea).find('table');
+	 	 allTables.each(function(i, obj){
+	 		 var currentTableId = $(obj).attr('id');
+ 			 var allCells = $(obj).find('td');
+ 			 allCells.each(function(j, cell){
+ 				 //Only enable cells if
+ 				 // table does not have winner
+ 				 // and that do not have turns in them 
+				 var nextTableNum = currentTableId.slice(-1) - 1;
+ 				 var winner = winnerArray[nextTableNum];
+ 				 if(!winner
+ 				 		&& !$(cell).text().trim().length){
+	 				 $(cell).click(function(e){
+	 					startTurns(e.target, turn, winnerArray, previousTarget);
+	 				});
+ 				 }
+ 				 
+ 				 //Highlight cells
+ 				 if(!winner){
+ 		 			 //White
+ 			 		$("#"+currentTableId).css('background-color',"white");
+ 		 		 }else{
+ 		 			 //DarkGrey
+ 		 	 		$("#"+currentTableId).css('background-color',"darkgrey");
+ 		 		 }		 
+ 			 });
+	 	 });
+
+  }
+ 
+ /*
+  *Starts and restarts game play
+  */
+  function startTurns(target, turn, winnerArray, previousTarget){
+	
+	$(target).text(turn);
+    turn = switchTurn(target, turn);
+    updateTurn(turn);
+    previousTarget = changeTargetColor(target, turn, previousTarget);
+    disableAllTables();
+    determineWin(target,turn, winnerArray, previousTarget);
+        
+  }
+ 
+ /*
+  *Highlights the next area to play turn
+  */
+ function highlightTablesBySelect(target){
+ 	 var tableID = getTableIdByTD(target);
+ 	 var allTables = $(mainArea).find('table');
+ 	 allTables.each(function(i, obj){
+ 		 var currentTableID = $(obj).attr('id');
+ 		 if(currentTableID == tableID){
+ 			 //White
+	 		$(obj).css('background-color',"white");
+ 		 }else{
+ 			 //DarkGrey
+ 	 		$(obj).css('background-color',"darkgrey");
+ 		 }		 
+ 	});
+  }
+ 
+ /*
+  * returns the table id for the next
+  * turn
+  */
+ function getTableIdByTD(target){
+	 var tableNum = target.className;
+ 	 var tableID = "table" + tableNum;
+	 return tableID;
+ }
+ 
+ function determineWin(target, turn, winnerArray, previousTarget){
+	 //Get Table
+	 var currentTable = target.closest('table');
+	 //Get cells
+	 var cells = $(currentTable).find('td');
+	 //Get Values array of cells
+	 var cellsArray = getValuesArray(cells); 
+	 var winner = getWinner(cellsArray);
+	 
+	 //Check draw
+	 var isDraw = true;
+	 if(!winner){
+		 for(var i = 0; i < 9; i++){
+			 if($(cells[i]).text().trim().length == 0){
+				 isDraw = false;
+				 winner = "";
+			 }
+		 }
+	 }
+	 //If Draw - Find winner
+	 if(isDraw){
+		 winner = detDrawWinner(cellsArray);
+	 }
+	 
+	 //Add winner winnerArray
+	 //[tableID:winner]
+	 if(winner){
+		 var tableId = $(currentTable).attr('id');
+		 var tableNum = tableId.slice(-1) - 1;
+		 winnerArray[tableNum] = winner;
+		 if(winner){
+			 if(winner == "X"){
+			 	$(currentTable).css('background-image',"url(/UTTT/images/X.png)");
+			 }else{
+				$(currentTable).css('background-image',"url(/UTTT/images/O.jpg)");
+			 }
+			 
+		 }else{
+			 $(currentTable).css('background-image',"url(/UTTT/images/draw.jpg)");
+		 }
+		 $(currentTable).css('background-repeat',"no-repeat");
+		 $(currentTable).css('background-size',"contain");
+		 
+		 //Game isnt over
+	     if(!isArrayFull(winnerArray)){
+	    	var nextTableId = getTableIdByTD(target);
+			var nextTableNum = nextTableId.slice(-1) - 1;
+			if(winnerArray[nextTableNum]){
+				 enableAllPlayable(target, turn, winnerArray, previousTarget);
+			}else{
+				 enableSelectedTable(target, turn, winnerArray, previousTarget);
+			}
+	    } 
+		//Check Game winner
+		var gameWinner = getWinner(winnerArray);
+    	if(gameWinner){
+    		winDialog(gameWinner + "s Win!!");
+    	}else if (isArrayFull(winnerArray)){
+    		winDialog("Game is a draw!");
+	    }
+	 }else{
+		 //Determine if the next turn is in a non won table
+		 var nextTableId = getTableIdByTD(target);
+		 var nextTableNum = nextTableId.slice(-1) - 1;
+		 if(winnerArray[nextTableNum]){
+			 enableAllPlayable(target, turn, winnerArray, previousTarget);
+		}else{
+			 enableSelectedTable(target, turn, winnerArray, previousTarget);
+		}
+	 }
+ }
+ 
+ function getWinner(cells){
+	 //Check Horizontal
+	 for(var i = 0; i<=8; i+=3){
+		 //No emptys in row
+		 if(cells[i]
+				 && cells[i+1]
+				 && cells[i+2]){
+			 //All Equal
+			 if(cells[i].trim() == cells[i+1].trim()
+					 && cells[i].trim() == cells[i+2].trim()){
+				 return cells[i].trim();
+			 }
+		 }
+	 }
+	 
+	 //Check Vertical
+	 for(var i = 0; i<=2; i++){
+		 //No emptys in row
+		 if(cells[i]
+				 && cells[i+3]
+				 && cells[i+6]){
+			 //All Equal
+			 if(cells[i].trim() == cells[i+3].trim()
+					 && cells[i].trim() == cells[i+6].trim()){
+				 return cells[i].trim();
+			 }
+		 }
+	 }
+	 
+	 //Check diagonal
+	 if(cells[0]
+			 && cells[4]
+			 && cells[8]){
+		 //All Equal
+		 if(cells[0].trim() == cells[4].trim()
+				 && cells[4].trim() == cells[8].trim()){
+			 return cells[8].trim();
+		 }
+	 }
+	 
+	 //Check anti-diagonal
+	 if($(cells[2])
+			 && $(cells[4])
+			 && $(cells[6])){
+		 //All Equal
+		 if(cells[2] == cells[4]
+				 && cells[4] == cells[6]){
+			 return cells[6];
+		 }
+	 }
+ }
+ 
+ /*
+ * If a draw, Player with most cells wins
+ * table
+ */
+ function detDrawWinner(cells){
+	 var countXs = 0;
+	 for(var i=0; i < cells.length; i++){
+		 if(cells[i].trim() == "X"){
+			 countXs++;
+		 }
+	 }
+	 if(countXs >= 5){
+		 return "X";
+	 }else{
+		 return "O";
+	 }
+ }
+ 
+ /*
+  * Converts array of tds to array of strings
+  */
+ function getValuesArray(cells){
+	 var valuesArray = [];
+	 for(var i =0; i < cells.length; i++){
+		 valuesArray[i] = $(cells[i]).text().trim();
+	 }
+	 return valuesArray;
+ }
+ 
+ /*
+ * Determines if the array indexes all have non empty values 
+ */
+ function isArrayFull(array){
+	 for(var i = 0; i < array.length; i++){
+		 if(!array[i]){
+			 return false;
+		 }
+	 }
+	 return true;
+ }
+ 
+ function changeTargetColor(target, turn, previousTarget){
+	 
+	 if(previousTarget){
+		 $(previousTarget).css('color',"black");
+	 }
+	 $(target).css('color',"red");
+	 previousTarget = target;
+	 return previousTarget;
+ }
+ 
+ function winDialog(gameOverText){
+	 $(function() {
+			$("#dialog").dialog({
+				modal: true,
+				resizable: false,
+				title: gameOverText,
+				buttons: {
+					"Yeah!": function() {
+						location.reload();
+					},
+					"Nope": function() {
+						$(this).dialog("close");
+					}
+				}
+			});
+		});
+ }
+ 
+ function updateTurn(turn){
+	 if(window.orientation == 0){
+		 $("#mainArea span").html("Turn: " + turn);
+	 }else{
+		 $("#spacer span").html("Turn: " + turn);
+	 }
+ }
+</script>
+
+</html>

@@ -1,0 +1,63 @@
+td {
+    border-style: solid;
+    border-width: 1px;
+    
+}
+
+table td 
+{
+    text-align:center; 
+    vertical-align:middle;
+	border-color: black;
+}
+
+table{
+border-collapse: collapse;
+border-style: solid;
+border-width: .5vw;
+border-color: black;
+height:100%;
+float:left;
+width: auto;
+}
+
+.col{
+height:33%;
+margin-left:auto;
+margin-right:auto;
+}
+
+#mainArea{
+display:inline;
+white-space : nowrap;
+height:100%;
+display:inline-block;
+}
+
+#spacer{
+height:100%;
+float:left;
+font-size: 5vw;
+}
+
+#spacer span{
+padding-left: 10%;
+}
+
+#container{
+height:100%;
+width:100%
+}
+
+#dialog { display: none; z-index:1;}
+
+html, body {margin:0;padding:0;height:100%;}
+
+/* portrait */
+@media screen and (orientation:portrait) {
+	
+}
+/* landscape */
+@media screen and (orientation:landscape) {
+	
+}
